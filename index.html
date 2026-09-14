@@ -1,0 +1,783 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#202122">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mój Trading">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Mój Trading — Dziennik tradingowy</title>
+<style>
+:root{
+  --bg:#343536; --bg2:#303132; --panel:#383a3b; --panel2:#3d3f40;
+  --line:#242526; --text:#f2f2f2; --muted:#b4b5b6; --blue:#43a5e8;
+  --blue2:#3297dc; --green:#35a8e8; --red:#d85c5c; --yellow:#d9b44a;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font:11px Arial,Helvetica,sans-serif}
+button,input,select,textarea{font:inherit}
+body{overflow-x:hidden}
+header{
+  height:38px;border-bottom:1px solid #181919;display:flex;align-items:center;
+  padding:0 14px;gap:28px;background:#202122;position:sticky;top:0;z-index:10;
+  box-shadow:0 1px 4px #0008
+}
+.logo{font-size:15px;font-weight:800;white-space:nowrap;color:#eee}
+.logo span{color:#9aa0a5}
+nav{display:flex;gap:3px;overflow:auto;height:100%;align-items:center}
+nav button{background:none;border:0;color:#aaa;padding:10px 18px;cursor:pointer;white-space:nowrap;font-size:10px}
+nav button.active,nav button:hover{color:#fff;background:#2a2b2c}
+.wrap{display:grid;grid-template-columns:160px 1fr;min-height:calc(100vh - 38px)}
+aside{border-right:1px solid #202122;padding:16px 13px;background:#2d2e2f}
+.filter-title{font-size:11px;font-weight:700;margin-bottom:15px;color:#ddd}
+.field{margin-bottom:11px}.field label{display:block;color:#aeb0b1;font-size:9px;margin-bottom:5px}
+select,input,textarea{width:100%;background:#38393a;border:1px solid #4b4c4d;color:#eee;border-radius:3px;padding:6px}
+textarea{min-height:80px;resize:vertical}
+.days{display:grid;grid-template-columns:repeat(2,1fr);gap:3px}
+.days button,.seg button{background:#454647;color:#bbb;border:0;border-radius:2px;padding:5px 2px;cursor:pointer;font-size:9px}
+.days button.on,.seg button.on{background:#3196d6;color:#fff}
+.seg{display:flex;gap:3px}.seg button{flex:1}
+.apply,.primary{width:100%;border:0;background:#3297dc;color:#fff;border-radius:2px;padding:7px;font-weight:700;cursor:pointer;margin-top:4px}
+.secondary{border:1px solid #555;background:#414243;color:#eee;border-radius:2px;padding:6px 9px;cursor:pointer}
+.danger{border:1px solid #6b2529;background:#4a2527;color:#ffd0d0;border-radius:2px;padding:6px 9px;cursor:pointer}
+main{padding:10px 9px 18px;overflow:auto;background:#343536}
+.topline{display:flex;justify-content:space-between;align-items:center;margin:0 0 9px;gap:15px}
+.topline h1{font-size:13px;margin:0}.sub{color:#aeb0b1;font-size:9px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.card{
+  padding:14px 12px;min-height:84px;background:#3b3c3d;border:1px solid #2a2b2c;
+  border-radius:4px;box-shadow:0 3px 8px #0007;display:flex;flex-direction:column;justify-content:center;text-align:center
+}
+.card:nth-child(even){background:#3f4041}
+.card .label{color:#c6c7c8;font-size:9px}.value{font-size:22px;font-weight:700;margin-top:8px}
+.positive{color:#53ace4}.negative{color:#e16a6a}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:9px}
+.chart{
+  padding:10px;min-height:190px;background:#383a3b;border:1px solid #292a2b;
+  border-radius:4px;box-shadow:0 3px 8px #0007
+}
+.chart h3{font-size:9px;font-weight:600;color:#ddd;margin:0 0 7px;text-align:left}
+.barbox{
+  height:142px;display:flex;align-items:end;gap:3px;padding:5px 5px 3px;
+  border-left:1px solid #666;border-bottom:1px solid #666;background:linear-gradient(#3a3b3c,#353637)
+}
+.bar{background:linear-gradient(#54aee7,#2588c8);min-width:5px;flex:1;border-radius:1px 1px 0 0}
+.summary{margin-top:9px;padding:12px;background:#383a3b;border:1px solid #292a2b;border-radius:4px;display:grid;grid-template-columns:repeat(6,1fr);gap:8px;box-shadow:0 3px 8px #0007}
+.sum{padding:7px}.sum label{color:#aaa;font-size:9px}.sum strong{display:block;font-size:14px;margin-top:5px}
+.panel{padding:12px;background:#383a3b;border:1px solid #292a2b;border-radius:4px;margin-bottom:9px;box-shadow:0 3px 8px #0007}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.toolbar .actions{display:flex;gap:6px}
+.table-wrap{overflow:auto}.table{width:100%;border-collapse:collapse;min-width:900px}
+.table th,.table td{text-align:left;padding:8px;border-bottom:1px solid #4a4b4c;white-space:nowrap}
+.table th{color:#aaa;font-size:9px}.table tr:hover td{background:#414344}
+.formgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.formgrid .wide{grid-column:span 2}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;padding:20px;z-index:20}
+.modal.open{display:flex}.modal-box{width:min(900px,100%);max-height:90vh;overflow:auto;background:#303132;border:1px solid #555;border-radius:5px;padding:15px;box-shadow:0 20px 60px #000c}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}.modal-head h2{margin:0;font-size:14px}.form-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:13px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.kpi{padding:10px;background:#3f4041;border:1px solid #2b2c2d;border-radius:3px}.kpi b{display:block;font-size:18px;margin-top:5px}
+.empty{padding:25px;text-align:center;color:#aaa}.foot{color:#777;text-align:center;padding:12px}
+.badge{display:inline-block;padding:3px 6px;border-radius:3px;background:#454647;color:#d5d5d5;font-size:9px}.badge.win{background:#245b70;color:#dff6ff}.badge.loss{background:#632d2f;color:#ffd0d0}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:9px}.calgrid div{min-height:28px;padding:5px;text-align:center;border-radius:2px;background:#333435;color:#aaa;font-size:9px}.calgrid .day{background:#3c3d3e}.calgrid .win{background:#24586e;color:#dff6ff}.calgrid .loss{background:#632d2f;color:#ffd0d0}.calgrid .flat{background:#5c4c22;color:#ffe9a8}
+.chart svg{width:100%;height:142px;display:block}
+.visual-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:9px}
+.visual-chart{min-height:190px}
+.heatmap{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;height:142px;padding:2px}
+.heatmap span{display:flex;align-items:center;justify-content:center;background:#444647;color:#eee;font-size:9px}
+.heatmap span:nth-child(3n){background:#4a7fa0}.heatmap span:nth-child(4n){background:#5a9ccc}.heatmap span:nth-child(5n){background:#376b8a}
+@media(max-width:1050px){.cards{grid-template-columns:repeat(2,1fr)}.grid,.visual-grid{grid-template-columns:repeat(2,1fr)}.summary{grid-template-columns:repeat(3,1fr)}.formgrid{grid-template-columns:repeat(2,1fr)}.kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:750px){header{gap:8px}.wrap{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid #202122}.grid,.visual-grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}.summary{grid-template-columns:1fr 1fr}.formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:span 1}.kpis{grid-template-columns:1fr 1fr}}
+
+/* --- Tryb prowadzenia transakcji --- */
+.trade-guide{
+  margin-bottom:12px;padding:12px 14px;background:#303233;border:1px solid #4a4b4c;
+  border-radius:4px;box-shadow:0 3px 8px #0006
+}
+.trade-guide-title{font-size:12px;font-weight:700;color:#fff;margin-bottom:5px}
+.trade-guide-text{font-size:10px;color:#bfc1c2;line-height:1.5}
+.trade-progress{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:9px}
+.trade-step{padding:6px;text-align:center;background:#414243;border-radius:2px;color:#aaa;font-size:9px}
+.trade-step.active{background:#3297dc;color:#fff}
+.form-section{
+  grid-column:1/-1;padding:9px 10px 3px;border-top:1px solid #4a4b4c;margin-top:3px;
+  color:#ddd;font-weight:700;font-size:10px
+}
+.field-help{display:block;color:#858889;font-size:8px;line-height:1.3;margin-top:3px}
+.field.required-guide label:after{content:"  • ważne";color:#3297dc;font-weight:400}
+.guide-result{
+  margin-top:10px;padding:9px;background:#292a2b;border-left:3px solid #3297dc;
+  color:#c9cbcc;font-size:9px;line-height:1.5
+}
+@media(max-width:750px){.trade-progress{grid-template-columns:repeat(2,1fr)}}
+
+
+.strategy-layout{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.strategy-hero{background:linear-gradient(145deg,#3b3d3e,#333536)}
+.strategy-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:10px}
+.strategy-kpi{padding:9px;background:#303233;border:1px solid #4b4c4d;border-radius:3px}
+.strategy-kpi span{display:block;color:#999;font-size:8px}.strategy-kpi b{display:block;font-size:17px;margin-top:4px}
+.strategy-cards{display:grid;gap:6px}
+.strategy-card{padding:9px;background:#303233;border:1px solid #4a4b4c;border-radius:3px;cursor:pointer}
+.strategy-card:hover{background:#414344;border-color:#5c5d5e}
+.strategy-card-head{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.strategy-card-name{font-weight:700;color:#eee;font-size:10px}.strategy-card-meta{color:#999;font-size:8px;margin-top:4px}
+.strategy-card-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:7px}
+.strategy-card-stats div{background:#3d3f40;padding:5px;text-align:center}.strategy-card-stats b{display:block;font-size:11px}.strategy-card-stats span{font-size:7px;color:#999}
+.strategy-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.detail-box{background:#303233;border:1px solid #4a4b4c;border-radius:3px;padding:10px}
+.detail-box h4{margin:0 0 7px;font-size:10px}.detail-box p{margin:5px 0;color:#c4c5c6;line-height:1.5}
+.checklist{display:grid;gap:4px}.check-item{display:flex;gap:7px;align-items:center;padding:5px;background:#3d3f40;border-radius:2px;color:#c5c6c7;font-size:9px}
+.tag{display:inline-block;background:#24586e;color:#dff6ff;border-radius:2px;padding:3px 5px;font-size:8px;margin:2px}
+@media(max-width:750px){.strategy-layout{grid-template-columns:1fr}.strategy-kpis{grid-template-columns:repeat(2,1fr)}.strategy-detail-grid{grid-template-columns:1fr}}
+
+
+/* ===== V4 — iPhone UX ===== */
+.mobile-filter-bar{display:none}
+.mobile-only-note{display:none}
+@media(max-width:750px){
+  html,body{font-size:14px}
+  body{padding-bottom:env(safe-area-inset-bottom)}
+  header{
+    height:auto;min-height:56px;padding:8px 10px;gap:10px;
+    position:sticky;top:0;overflow:hidden
+  }
+  .logo{font-size:16px}
+  nav{flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav button{padding:12px 14px;font-size:12px}
+  .wrap{display:block;min-height:calc(100vh - 56px)}
+  aside{
+    display:none;border:0;border-bottom:1px solid #202122;padding:12px;
+    background:#2d2e2f
+  }
+  body.mobile-filters-open aside{display:block}
+  main{padding:10px 10px 24px}
+  .mobile-filter-bar{
+    display:flex;gap:8px;margin:0 0 10px
+  }
+  .mobile-filter-bar button{flex:1;min-height:44px;font-size:13px}
+  .topline{margin-bottom:8px}
+  .topline h1{font-size:18px}
+  .sub{font-size:11px}
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card{min-height:82px;padding:12px 8px}
+  .card .label{font-size:10px}
+  .value{font-size:20px}
+  .visual-grid,.grid,.strategy-layout,.strategy-detail-grid{grid-template-columns:1fr}
+  .summary{grid-template-columns:1fr 1fr}
+  .summary .sum{padding:8px}
+  .formgrid{grid-template-columns:1fr;gap:8px}
+  .formgrid .wide{grid-column:span 1}
+  .kpis{grid-template-columns:1fr 1fr}
+  .panel{padding:10px;margin-bottom:8px}
+  .toolbar{align-items:flex-start}
+  .toolbar .actions{flex-wrap:wrap}
+  button,.secondary,.primary,.danger{min-height:42px}
+  input,select,textarea{font-size:16px;min-height:44px}
+  textarea{min-height:120px}
+  .table{min-width:760px}
+  .modal{padding:8px}
+  .modal-box{max-height:94vh;padding:11px;border-radius:8px}
+  .trade-guide{padding:10px}
+  .trade-progress{grid-template-columns:1fr 1fr}
+  .field-help{font-size:10px}
+  .foot{font-size:11px}
+}
+@media(min-width:751px){
+  .mobile-filter-bar{display:none!important}
+}
+
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">M7 <span>×</span></div>
+  <nav id="mainNav">
+    <button class="active" data-section="panel">Panel główny</button>
+    <button data-section="transactions">Transakcje</button>
+    <button data-section="calendar">Kalendarz</button>
+    <button data-section="stats">Statystyki</button>
+    <button data-section="strategies">Modele</button>
+    <button data-section="notes">Notatki</button>
+    <button data-section="settings">Ustawienia</button>
+  </nav>
+</header>
+<div class="wrap">
+<aside>
+  <div class="filter-title">⚙ Filtry</div>
+  <div class="field"><label>Instrument</label>
+  <input type="text" id="filterInstrument" list="instrumentOptions"
+         placeholder="Wpisz instrument lub wybierz..." autocomplete="off" spellcheck="false">
+  <datalist id="instrumentOptions"></datalist>
+</div>
+  <div class="field"><label>Taktyka</label><input id="filterTactic" list="filterTacticOptions" placeholder="Wszystkie / wpisz..." autocomplete="off"><datalist id="filterTacticOptions"></datalist></div>
+  <div class="field"><label>Strategia</label><input id="filterStrategy" list="filterStrategyOptions" placeholder="Wszystkie / wpisz..." autocomplete="off"><datalist id="filterStrategyOptions"></datalist></div>
+  <div class="field"><label>Od daty</label><input type="date" id="filterFrom"></div>
+  <div class="field"><label>Do daty</label><input type="date" id="filterTo"></div>
+  <div class="field"><label>Dni tygodnia</label>
+  <div class="days" id="weekdays">
+    <button type="button" data-day="1" class="on">Pon</button>
+    <button type="button" data-day="2" class="on">Wt</button>
+    <button type="button" data-day="3" class="on">Śr</button>
+    <button type="button" data-day="4" class="on">Czw</button>
+    <button type="button" data-day="5" class="on">Pt</button>
+    <button type="button" data-day="6" class="on">Sob</button>
+    <button type="button" data-day="0" class="on">Nd</button>
+  </div>
+</div>
+  <div class="field"><label>Kierunek</label><div class="seg" id="filterDirection"><button class="on" data-value="">Wszystkie</button><button data-value="Long">Long</button><button data-value="Short">Short</button></div></div>
+  <div class="field"><label>Wynik</label><div class="seg" id="filterOutcome"><button class="on" data-value="">Wszystkie</button><button data-value="win">Zyskowne</button><button data-value="loss">Stratne</button></div></div>
+  <button class="apply" id="applyFilters">Zastosuj filtry</button>
+  <button class="secondary" id="clearFilters" style="width:100%;margin-top:7px">Wyczyść filtry</button>
+</aside>
+
+<main>
+  <div class="mobile-filter-bar">
+    <button class="primary" id="mobileFiltersToggle" type="button">⚙ Filtry</button>
+    <button class="secondary" id="mobileAddTrade" type="button">＋ Dodaj transakcję</button>
+  </div>
+
+  <div class="topline">
+    <div><h1 id="pageTitle">Panel analityczny</h1><div class="sub" id="pageSub">Analiza. Dyscyplina. Wyniki. • Taktyki DR / IDR</div></div>
+    <div class="sub" id="lastUpdate"></div>
+  </div>
+
+  <div id="viewPanel">
+    <section class="cards" id="cards"></section>
+    <section class="visual-grid" id="visuals"></section>
+    <section class="grid" id="charts"></section>
+    <section class="summary" id="summary"></section>
+  </div>
+
+  <div id="viewTransactions" style="display:none">
+    <section class="panel">
+      <div class="toolbar"><div><strong>Historia transakcji</strong><div class="sub">Tutaj prowadzimy każdą transakcję od początku do końca.</div></div>
+        <div class="actions"><button class="primary" style="width:auto" id="addTrade">＋ Dodaj transakcję</button><button class="secondary" id="exportData">Eksport JSON</button><button class="secondary" id="importData">Import JSON</button><input type="file" id="importFile" accept=".json" style="display:none"></div>
+      </div>
+      <div class="table-wrap"><table class="table"><thead><tr><th>Data</th><th>Godzina</th><th>Instrument</th><th>Kierunek</th><th>Strategia</th><th>Taktyka</th><th>R</th><th>Wynik zł</th><th>Akcje</th></tr></thead><tbody id="transactionsTable"></tbody></table></div>
+    </section>
+  </div>
+
+  <div id="viewCalendar" style="display:none">
+    <section class="panel">
+      <div class="toolbar"><strong>Kalendarz wyników</strong><div class="actions"><button class="secondary" id="prevMonth">←</button><strong id="monthTitle"></strong><button class="secondary" id="nextMonth">→</button></div></div>
+      <div class="calgrid" id="bigCalendar"></div>
+    </section>
+    <section class="panel"><strong>Transakcje z wybranego dnia</strong><div id="dayTrades" class="empty">Kliknij dzień w kalendarzu.</div></section>
+  </div>
+
+  <div id="viewStats" style="display:none">
+    <section class="panel"><div class="toolbar"><strong>Statystyki</strong><span class="sub">Liczone z aktualnie przefiltrowanych transakcji</span></div><div class="kpis" id="statsKpis"></div></section>
+    <section class="grid" id="statsCharts"></section>
+  </div>
+
+  <div id="viewStrategies" style="display:none">
+    <section class="panel strategy-hero">
+      <div class="toolbar">
+        <div>
+          <strong>Strategie i taktyki</strong>
+          <div class="sub">Buduj własną bazę setupów i ucz się, które warianty naprawdę działają.</div>
+        </div>
+        <div class="actions">
+          <button class="secondary" id="addStrategy">＋ Nowa strategia</button>
+          <button class="secondary" id="addTactic">＋ Nowa taktyka</button>
+        </div>
+      </div>
+      <div class="strategy-kpis" id="strategyKpis"></div>
+    </section>
+
+    <section class="strategy-layout">
+      <section class="panel">
+        <div class="toolbar"><strong>Moje strategie</strong><span class="sub">Kliknij, aby zobaczyć szczegóły</span></div>
+        <div id="strategyCards" class="strategy-cards"></div>
+      </section>
+      <section class="panel">
+        <div class="toolbar"><strong>Taktyki</strong><span class="sub">Warianty wykonania strategii</span></div>
+        <div id="tacticCards" class="strategy-cards"></div>
+      </section>
+    </section>
+
+    <section class="panel">
+      <div class="toolbar">
+        <div><strong>Analiza strategii</strong><div class="sub">Automatycznie liczona z zapisanych transakcji.</div></div>
+      </div>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>Strategia</th><th>Transakcje</th><th>Win Rate</th><th>Średnie R</th><th>Wynik zł</th><th>Profit Factor</th><th>Najlepsza taktyka</th><th>Akcje</th></tr></thead>
+        <tbody id="strategyTable"></tbody>
+      </table></div>
+    </section>
+
+    <section class="panel" id="strategyDetail" style="display:none"></section>
+  </div>
+
+  <div id="viewNotes" style="display:none">
+    <section class="panel"><div class="toolbar"><div><strong>Notatki</strong><div class="sub">Notatki są zapisywane lokalnie.</div></div><button class="primary" style="width:auto" id="saveNote">Zapisz notatkę</button></div><textarea id="notesArea" placeholder="Wpisz notatki do sesji..."></textarea></section>
+  </div>
+
+  <div id="viewSettings" style="display:none">
+    <section class="panel"><strong>Ustawienia</strong><p class="sub">Dane aplikacji są przechowywane lokalnie w przeglądarce. Możesz wykonać eksport JSON jako kopię zapasową.</p><button class="danger" id="resetData">Usuń wszystkie transakcje</button></section>
+  </div>
+
+  <div class="foot">Mój Trading • Trading to maraton, nie sprint.</div>
+</main>
+</div>
+
+<div class="modal" id="tradeModal">
+  <div class="modal-box">
+    <div class="modal-head"><h2 id="modalTitle">Dodaj transakcję</h2><button class="secondary" id="closeModal">✕</button></div>
+    <form id="tradeForm">
+      <input type="hidden" id="tradeId">
+      <div class="trade-guide">
+        <div class="trade-guide-title">Prowadzę Cię krok po kroku</div>
+        <div class="trade-guide-text" id="tradeGuideText">Najpierw wpisz podstawowe informacje. Potem określimy strategię i taktykę, parametry wejścia oraz wynik.</div>
+        <div class="trade-progress">
+          <div class="trade-step active" id="step1">1. Podstawy</div>
+          <div class="trade-step" id="step2">2. Plan</div>
+          <div class="trade-step" id="step3">3. Wynik</div>
+          <div class="trade-step" id="step4">4. Wnioski</div>
+        </div>
+      </div>
+      <div class="formgrid">
+        <div class="form-section">KROK 1 — PODSTAWOWE INFORMACJE</div><div class="field required-guide"><label>Data *</label><input type="date" id="tradeDate" required><span class="field-help">Dzień, w którym otworzyłeś pozycję.</span></div>
+        <div class="field"><label>Godzina wejścia</label><input type="time" id="tradeTime"><span class="field-help">Godzina faktycznego wejścia.</span></div>
+        <div class="field required-guide"><label>Instrument *</label><input type="text" id="tradeInstrument" placeholder="np. NQ" autocomplete="off" spellcheck="false" required><span class="field-help">Rynek/instrument, np. NQ, ES, EURUSD.</span></div>
+        <div class="field required-guide"><label>Kierunek *</label><select id="tradeDirection"><option>Long</option><option>Short</option></select><span class="field-help">Long = grasz wzrost. Short = grasz spadek.</span></div>
+        <div class="form-section">KROK 2 — PLAN TRANSAKCJI</div><div class="field required-guide"><label>Strategia *</label><input id="tradeStrategy" list="strategyOptions" placeholder="np. Breakout" autocomplete="off" required><datalist id="strategyOptions"></datalist><span class="field-help">Dlaczego bierzesz transakcję? Nazwa głównego setupu.</span></div>
+        <div class="field"><label>Taktyka</label><input id="tradeTactic" list="tacticOptions" type="text" autocomplete="off" placeholder="np. DR + IDR"><datalist id="tacticOptions"></datalist><span class="field-help">Jak dokładnie rozegrałeś strategię?</span></div>
+        <div class="field"><label>Entry</label><input type="number" step="any" id="tradeEntry"><span class="field-help">Cena wejścia.</span></div>
+        <div class="field"><label>SL</label><input type="number" step="any" id="tradeSL"><span class="field-help">Poziom, przy którym plan zakłada wyjście ze stratą.</span></div>
+        <div class="field"><label>TP</label><input type="number" step="any" id="tradeTP"><span class="field-help">Planowany poziom realizacji zysku.</span></div>
+        <div class="form-section">KROK 3 — WYNIK</div><div class="field required-guide"><label>Wynik R *</label><input type="number" step="0.01" id="tradeR" required><span class="field-help">+1R = zarobiłeś tyle, ile wynosiło ryzyko. -1R = pełna strata ryzyka.</span></div>
+        <div class="field required-guide"><label>Wynik zł *</label><input type="number" step="0.01" id="tradePL" required><span class="field-help">Rzeczywisty wynik finansowy po zamknięciu.</span></div>
+        <div class="field"><label>MFE</label><input type="number" step="0.01" id="tradeMFE"><span class="field-help">Jak daleko transakcja poszła maksymalnie w dobrą stronę.</span></div>
+        <div class="field"><label>MAE</label><input type="number" step="0.01" id="tradeMAE"><span class="field-help">Jak daleko poszła maksymalnie przeciwko Tobie.</span></div>
+        <div class="field"><label>Retracement</label><input type="number" step="0.01" id="tradeRetracement"><span class="field-help">Wielkość cofnięcia po ruchu.</span></div>
+        <div class="field"><label>Czas trwania (min)</label><input type="number" step="1" id="tradeDuration"><span class="field-help">Ile minut pozycja była otwarta.</span></div>
+        <div class="form-section">KROK 4 — WNIOSKI</div><div class="field wide"><label>Notatka</label><textarea id="tradeNote" placeholder="Co zrobiłem dobrze? Co zrobiłem źle? Czy wykonałem plan?"></textarea><span class="field-help">Jedno lub dwa zdania wystarczą. Skup się na jakości wykonania, nie tylko na wyniku.</span></div>
+      </div>
+      <div class="form-actions"><button type="button" class="secondary" id="cancelTrade">Anuluj</button><button type="submit" class="primary" style="width:auto">Zapisz transakcję</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY='mojTrading.transactions.v2';
+const NOTES_KEY='mojTrading.notes.v1';
+const STRATEGIES_KEY='mojTrading.strategies.v1';
+const TACTICS_KEY='mojTrading.tactics.v1';
+let trades=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+let strategyDefs=JSON.parse(localStorage.getItem(STRATEGIES_KEY)||'[]');
+let tacticDefs=JSON.parse(localStorage.getItem(TACTICS_KEY)||'[]');
+let currentSection='panel';
+let selectedMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1);
+let selectedCalendarDate=null;
+
+const $=id=>document.getElementById(id);
+const money=n=>new Intl.NumberFormat('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n||0)+' zł';
+const num=n=>new Intl.NumberFormat('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n||0);
+const datePL=s=>s?new Date(s+'T00:00:00').toLocaleDateString('pl-PL'):'—';
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(trades)); refreshAll();}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function options(id,values){
+  const el=$(id), cur=el.value, vals=[...new Set(values.filter(Boolean))].sort();
+  const dl=$(id+'Options');
+  if(dl){
+    dl.innerHTML=vals.map(v=>`<option value="${esc(v)}"></option>`).join('');
+    el.value=cur;
+    return;
+  }
+  el.innerHTML='<option value="">Wszystkie</option>'+vals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  if(vals.includes(cur))el.value=cur;
+}
+function refreshFilterOptions(){options('filterInstrument',trades.map(t=>t.instrument));options('filterTactic',trades.map(t=>t.tactic));options('filterStrategy',trades.map(t=>t.strategy));options('tradeStrategy',trades.map(t=>t.strategy));options('tradeTactic',trades.map(t=>t.tactic));}
+
+function filters(){
+  const days=[...document.querySelectorAll('#weekdays button.on')].map(b=>+b.dataset.day);
+  const direction=$('filterDirection').querySelector('.on')?.dataset.value||'';
+  const outcome=$('filterOutcome').querySelector('.on')?.dataset.value||'';
+  return trades.filter(t=>{
+    if($('filterInstrument').value&&t.instrument.toLowerCase()!==$('filterInstrument').value.trim().toLowerCase())return false;
+    if($('filterTactic').value&&t.tactic.toLowerCase()!==$('filterTactic').value.trim().toLowerCase())return false;
+    if($('filterStrategy').value&&t.strategy.toLowerCase()!==$('filterStrategy').value.trim().toLowerCase())return false;
+    if($('filterFrom').value&&t.date<$('filterFrom').value)return false;
+    if($('filterTo').value&&t.date>$('filterTo').value)return false;
+    if(days.length&&!days.includes(new Date(t.date+'T00:00:00').getDay()))return false;
+    if(direction&&t.direction!==direction)return false;
+    if(outcome&&((+t.r>=0?'win':'loss')!==outcome))return false;
+    return true;
+  });
+}
+function metrics(arr){
+  const count=arr.length, wins=arr.filter(t=>+t.r>0), losses=arr.filter(t=>+t.r<0);
+  const sumR=arr.reduce((a,t)=>a+(+t.r||0),0), pl=arr.reduce((a,t)=>a+(+t.pl||0),0);
+  const winRate=count?wins.length/count*100:0;
+  const grossWin=wins.reduce((a,t)=>a+(+t.pl||0),0), grossLoss=Math.abs(losses.reduce((a,t)=>a+(+t.pl||0),0));
+  const pf=grossLoss?grossWin/grossLoss:(grossWin?Infinity:0);
+  const avg=count?sumR/count:0;
+  const best=arr.length?Math.max(...arr.map(t=>+t.pl||0)):0, worst=arr.length?Math.min(...arr.map(t=>+t.pl||0)):0;
+  let streak=0,bestStreak=0; [...arr].sort((a,b)=>a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||'')).forEach(t=>{if(+t.r>0){streak++;bestStreak=Math.max(bestStreak,streak)}else streak=0});
+  return {count,winRate,sumR,pl,pf,avg,best,worst,bestStreak,wins:wins.length,losses:losses.length};
+}
+function card(label,value,cls=''){return `<div class="card"><div class="label">${label}</div><div class="value ${cls}">${value}</div></div>`}
+function renderPanel(){
+  const m=metrics(filters());
+  $('cards').innerHTML=[
+    card('Liczba transakcji',m.count),
+    card('Łączny wynik R',num(m.sumR),m.sumR>=0?'positive':'negative'),
+    card('Średnie R / transakcję',num(m.avg),m.avg>=0?'positive':'negative'),
+    card('Skuteczność',num(m.winRate)+'%',m.winRate>=50?'positive':'negative'),
+    card('Zyskowne transakcje',m.wins,'positive'),
+    card('Stratne transakcje',m.losses,'negative'),
+    card('Profit Factor',m.pf===Infinity?'∞':num(m.pf),m.pf>=1?'positive':'negative'),
+    card('Seria zysków',m.bestStreak)
+  ].join('');
+  $('summary').innerHTML=[
+    `<div class="sum"><label>Łączny wynik</label><strong class="${m.pl>=0?'positive':'negative'}">${money(m.pl)}</strong></div>`,
+    `<div class="sum"><label>Średni / transakcję</label><strong class="${m.pl>=0?'positive':'negative'}">${money(m.count?m.pl/m.count:0)}</strong></div>`,
+    `<div class="sum"><label>Najlepsza transakcja</label><strong class="positive">${money(m.best)}</strong></div>`,
+    `<div class="sum"><label>Najgorsza transakcja</label><strong class="negative">${money(m.worst)}</strong></div>`,
+    `<div class="sum"><label>Średnie MFE</label><strong>${num(avgField(filters(),'mfe'))}</strong></div>`,
+    `<div class="sum"><label>Średnie MAE</label><strong>${num(avgField(filters(),'mae'))}</strong></div>`
+  ].join('');
+  const arr=filters();
+  $('visuals').innerHTML=areaChart('M7 Price — Extension / Retracement',arr.map(t=>+t.r||0))+
+    heatmapChart('M7 Heatmap',arr);
+  $('charts').innerHTML=
+    chartBar('M7 Retracement',arr.slice(-20).map(t=>+t.retracement||0),'ret')+
+    chartBar('Max Retracement',arr.slice(-20).map(t=>+t.retracement||0),'ret2')+
+    chartBar('M7 Max Extension',arr.slice(-20).map(t=>+t.mfe||0),'mfe')+
+    chartBar('Max Retracement Before Conf.',arr.slice(-20).map(t=>+t.mae||0),'mae2')+
+    chartBar('M7 Retracement Time — 15 mins',arr.slice(-20).map(t=>+t.duration||0),'duration')+
+    chartBar('Max Retracement Time',arr.slice(-20).map(t=>+t.duration||0),'duration2')+
+    chartBar('Max Extension Time',arr.slice(-20).map(t=>+t.mfe||0),'mfe2')+
+    chartBar('M7 Box SD',arr.slice(-20).map(t=>+t.r||0),'box');
+}
+function avgField(arr,k){const x=arr.map(t=>+t[k]).filter(Number.isFinite);return x.length?x.reduce((a,b)=>a+b,0)/x.length:0}
+
+function areaChart(title,vals){
+  const a=vals.length?vals.slice(-30):[0,0,0,0,0,0,0,0];
+  const min=Math.min(...a,0), max=Math.max(...a,1), span=(max-min)||1;
+  const pts=a.map((v,i)=>{
+    const x=5+(i/(Math.max(a.length-1,1)))*90;
+    const y=92-((v-min)/span)*72;
+    return `${x},${y}`;
+  }).join(' ');
+  const fill=`5,100 ${pts} 95,100`;
+  return `<div class="chart visual-chart"><h3>${title}</h3>
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+      <polyline points="${fill}" fill="#5a6268" opacity=".55" stroke="none"></polyline>
+      <polyline points="${pts}" fill="none" stroke="#43a5e8" stroke-width="1.8"></polyline>
+      <line x1="5" y1="92" x2="95" y2="92" stroke="#777" stroke-width=".35"/>
+    </svg></div>`;
+}
+function heatmapChart(title,arr){
+  const vals=arr.slice(-18).map(t=>+t.r||0);
+  while(vals.length<18) vals.unshift(0);
+  return `<div class="chart visual-chart"><h3>${title}</h3><div class="heatmap">${
+    vals.map((v,i)=>`<span title="${esc(num(v))}R">${Math.round(v*10)/10}</span>`).join('')
+  }</div></div>`;
+}
+function chartBar(title,vals,type){
+  if(!vals.length)return `<div class="chart"><h3>${title}</h3><div class="empty">Brak danych dla wybranych filtrów.</div></div>`;
+  const max=Math.max(...vals.map(v=>Math.abs(v)),1);
+  return `<div class="chart"><h3>${title}</h3><div class="barbox">${vals.map(v=>`<i class="bar" title="${esc(num(v))}" style="height:${Math.max(4,Math.abs(v)/max*92)}%"></i>`).join('')}</div></div>`;
+}
+function hourCounts(arr){const a=Array(12).fill(0);arr.forEach(t=>{if(!t.time)return;const h=parseInt(t.time);a[Math.max(0,Math.min(11,h-7))]++});return a}
+
+function renderTransactions(){
+  const arr=filters().sort((a,b)=>b.date.localeCompare(a.date)||(b.time||'').localeCompare(a.time||''));
+  $('transactionsTable').innerHTML=arr.length?arr.map(t=>`<tr>
+    <td>${datePL(t.date)}</td><td>${esc(t.time||'—')}</td><td>${esc(t.instrument)}</td><td>${esc(t.direction)}</td><td>${esc(t.strategy)}</td><td>${esc(t.tactic||'—')}</td>
+    <td class="${+t.r>=0?'positive':'negative'}">${num(t.r)}R</td><td class="${+t.pl>=0?'positive':'negative'}">${money(+t.pl)}</td>
+    <td><button class="secondary edit" data-id="${t.id}">Edytuj</button> <button class="danger del" data-id="${t.id}">Usuń</button></td>
+  </tr>`).join(''):`<tr><td colspan="9"><div class="empty">Brak transakcji dla aktualnych filtrów.</div></td></tr>`;
+  document.querySelectorAll('.edit').forEach(b=>b.onclick=()=>openTrade(b.dataset.id));
+  document.querySelectorAll('.del').forEach(b=>b.onclick=()=>deleteTrade(b.dataset.id));
+}
+function renderCalendar(){
+  const y=selectedMonth.getFullYear(),m=selectedMonth.getMonth();
+  $('monthTitle').textContent=selectedMonth.toLocaleDateString('pl-PL',{month:'long',year:'numeric'});
+  const first=new Date(y,m,1), start=(first.getDay()||7)-1, days=new Date(y,m+1,0).getDate();
+  let s=['Pn','Wt','Śr','Cz','Pt','Sob','Nd'].map(x=>`<div style="background:transparent;font-weight:700">${x}</div>`).join('');
+  for(let i=0;i<start;i++)s+='<div style="visibility:hidden"></div>';
+  for(let d=1;d<=days;d++){
+    const iso=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`, day=trades.filter(t=>t.date===iso), pl=day.reduce((a,t)=>a+(+t.pl||0),0);
+    const cls=day.length?(pl>0?'win':pl<0?'loss':'flat'):'';
+    s+=`<div class="${cls}" data-date="${iso}" style="cursor:pointer"><b>${d}</b>${day.length?`<br><span>${pl>=0?'+':''}${num(pl)}</span>`:''}</div>`;
+  }
+  $('bigCalendar').innerHTML=s;
+  $('bigCalendar').querySelectorAll('[data-date]').forEach(el=>el.onclick=()=>showDay(el.dataset.date));
+}
+function showDay(iso){
+  selectedCalendarDate=iso;
+  const arr=trades.filter(t=>t.date===iso);
+  $('dayTrades').innerHTML=arr.length?`<div class="table-wrap"><table class="table"><thead><tr><th>Godzina</th><th>Instrument</th><th>Kierunek</th><th>Strategia</th><th>R</th><th>Wynik</th></tr></thead><tbody>${arr.sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(t=>`<tr><td>${esc(t.time||'—')}</td><td>${esc(t.instrument)}</td><td>${esc(t.direction)}</td><td>${esc(t.strategy)}</td><td class="${+t.r>=0?'positive':'negative'}">${num(t.r)}R</td><td class="${+t.pl>=0?'positive':'negative'}">${money(+t.pl)}</td></tr>`).join('')}</tbody></table></div>`:`Brak transakcji ${datePL(iso)}.`;
+}
+function renderStats(){
+  const m=metrics(filters());
+  $('statsKpis').innerHTML=[['Transakcje',m.count],['Win Rate',num(m.winRate)+'%'],['Średnie R',num(m.avg)],['Profit Factor',m.pf===Infinity?'∞':num(m.pf)],['Łącznie R',num(m.sumR)],['Wynik',money(m.pl)],['Najlepsza',money(m.best)],['Najgorsza',money(m.worst)]].map(([a,b])=>`<div class="kpi"><span class="sub">${a}</span><b>${b}</b></div>`).join('');
+  const arr=filters();
+  $('statsCharts').innerHTML=chartBar('Wynik według godziny',hourCounts(arr),'hour')+
+    chartBar('MFE wszystkich filtrowanych transakcji',arr.map(t=>+t.mfe||0),'mfe')+
+    chartBar('MAE wszystkich filtrowanych transakcji',arr.map(t=>+t.mae||0),'mae');
+}
+function renderStrategies(){
+  const arr=filters(), map={};
+  arr.forEach(t=>(map[t.strategy||'Bez strategii']??=[]).push(t));
+
+  const totalStrategies=Object.keys(map).filter(x=>x!=='Bez strategii').length;
+  const totalTactics=[...new Set(arr.map(t=>t.tactic).filter(Boolean))].length;
+  const definedStrategies=strategyDefs.length;
+  const definedTactics=tacticDefs.length;
+
+  $('strategyKpis').innerHTML=[
+    ['Strategie',Math.max(totalStrategies,definedStrategies)],
+    ['Taktyki',Math.max(totalTactics,definedTactics)],
+    ['Transakcje',arr.length],
+    ['Średnie R',num(metrics(arr).avg)],
+    ['Win Rate',num(metrics(arr).winRate)+'%']
+  ].map(([a,b])=>`<div class="strategy-kpi"><span>${a}</span><b>${b}</b></div>`).join('');
+
+  const strategyNames=[...new Set([...strategyDefs.map(x=>x.name),...Object.keys(map).filter(x=>x!=='Bez strategii')])].sort();
+  $('strategyCards').innerHTML=strategyNames.length?strategyNames.map(name=>{
+    const a=map[name]||[], m=metrics(a), d=strategyDefs.find(x=>x.name===name);
+    return `<div class="strategy-card" data-strategy="${esc(name)}">
+      <div class="strategy-card-head"><span class="strategy-card-name">${esc(name)}</span><span class="tag">${a.length} trans.</span></div>
+      <div class="strategy-card-meta">${esc(d?.description||'Dodaj opis, warunki wejścia i zasady zarządzania.')}</div>
+      <div class="strategy-card-stats">
+        <div><span>Win Rate</span><b>${num(m.winRate)}%</b></div>
+        <div><span>Śr. R</span><b>${num(m.avg)}</b></div>
+        <div><span>Wynik</span><b class="${m.pl>=0?'positive':'negative'}">${money(m.pl)}</b></div>
+      </div>
+    </div>`;
+  }).join(''):`<div class="empty">Nie masz jeszcze strategii. Dodaj pierwszą.</div>`;
+
+  const tacticNames=[...new Set([...tacticDefs.map(x=>x.name),...arr.map(t=>t.tactic).filter(Boolean)])].sort();
+  $('tacticCards').innerHTML=tacticNames.length?tacticNames.map(name=>{
+    const a=arr.filter(t=>t.tactic===name), m=metrics(a), d=tacticDefs.find(x=>x.name===name);
+    return `<div class="strategy-card" data-tactic="${esc(name)}">
+      <div class="strategy-card-head"><span class="strategy-card-name">${esc(name)}</span><span class="tag">${a.length} trans.</span></div>
+      <div class="strategy-card-meta">${esc(d?.strategy?`Strategia: ${d.strategy}`:'Przypisz tę taktykę do strategii.')}</div>
+      <div class="strategy-card-stats">
+        <div><span>Win Rate</span><b>${num(m.winRate)}%</b></div>
+        <div><span>Śr. R</span><b>${num(m.avg)}</b></div>
+        <div><span>Wynik</span><b class="${m.pl>=0?'positive':'negative'}">${money(m.pl)}</b></div>
+      </div>
+    </div>`;
+  }).join(''):`<div class="empty">Nie masz jeszcze taktyk. Dodaj pierwszą.</div>`;
+
+  $('strategyTable').innerHTML=strategyNames.map(k=>{
+    const a=map[k]||[], m=metrics(a);
+    const tactics={};a.forEach(t=>{if(t.tactic)(tactics[t.tactic]??=[]).push(t)});
+    const best=Object.entries(tactics).sort((x,y)=>metrics(y[1]).pl-metrics(x[1]).pl)[0]?.[0]||'—';
+    return `<tr><td><b>${esc(k)}</b></td><td>${m.count}</td><td>${num(m.winRate)}%</td><td>${num(m.avg)}</td><td class="${m.pl>=0?'positive':'negative'}">${money(m.pl)}</td><td>${m.pf===Infinity?'∞':num(m.pf)}</td><td>${esc(best)}</td><td><button class="secondary strategy-edit" data-name="${esc(k)}">Edytuj</button></td></tr>`;
+  }).join('')||`<tr><td colspan="8"><div class="empty">Brak danych.</div></td></tr>`;
+
+  document.querySelectorAll('[data-strategy]').forEach(e=>e.onclick=()=>showStrategyDetail(e.dataset.strategy));
+  document.querySelectorAll('[data-tactic]').forEach(e=>e.onclick=()=>showTacticDetail(e.dataset.tactic));
+  document.querySelectorAll('.strategy-edit').forEach(e=>e.onclick=()=>editStrategy(e.dataset.name));
+}
+
+function showStrategyDetail(name){
+  const d=strategyDefs.find(x=>x.name===name)||{name,description:'',entry:'',exit:'',risk:'',mistakes:'',checklist:[]};
+  const a=filters().filter(t=>t.strategy===name), m=metrics(a);
+  const tactics={};a.forEach(t=>{if(t.tactic)(tactics[t.tactic]??=[]).push(t)});
+  const tacticRows=Object.entries(tactics).sort((x,y)=>metrics(y[1]).pl-metrics(x[1]).pl)
+    .map(([k,v])=>`<tr><td>${esc(k)}</td><td>${v.length}</td><td>${num(metrics(v).winRate)}%</td><td>${num(metrics(v).avg)}</td><td class="${metrics(v).pl>=0?'positive':'negative'}">${money(metrics(v).pl)}</td></tr>`).join('');
+  $('strategyDetail').style.display='block';
+  $('strategyDetail').innerHTML=`<div class="toolbar"><div><strong>${esc(name)}</strong><div class="sub">Szczegóły strategii i wyniki</div></div><button class="secondary" id="closeStrategyDetail">Zamknij</button></div>
+    <div class="strategy-detail-grid">
+      <div class="detail-box"><h4>Opis</h4><p>${esc(d.description||'Brak opisu.')}</p><h4>Warunki wejścia</h4><p>${esc(d.entry||'Brak zapisanych warunków.')}</p></div>
+      <div class="detail-box"><h4>Zarządzanie / wyjście</h4><p>${esc(d.exit||'Brak zasad wyjścia.')}</p><h4>Ryzyko</h4><p>${esc(d.risk||'Brak zapisanych zasad ryzyka.')}</p></div>
+      <div class="detail-box"><h4>Najczęstsze błędy</h4><p>${esc(d.mistakes||'Brak zapisanych błędów.')}</p><h4>Wyniki</h4><p>${m.count} trans. • ${num(m.winRate)}% WR • ${num(m.avg)}R średnio • ${money(m.pl)}</p></div>
+      <div class="detail-box"><h4>Taktyki tej strategii</h4><div class="table-wrap"><table class="table"><thead><tr><th>Taktyka</th><th>Trans.</th><th>WR</th><th>Śr. R</th><th>Wynik</th></tr></thead><tbody>${tacticRows||'<tr><td colspan="5">Brak taktyk.</td></tr>'}</tbody></table></div></div>
+    </div>`;
+  $('closeStrategyDetail').onclick=()=>{$('strategyDetail').style.display='none'};
+}
+
+function showTacticDetail(name){
+  const d=tacticDefs.find(x=>x.name===name)||{name,description:'',strategy:'',trigger:'',rules:'',mistakes:''};
+  const a=filters().filter(t=>t.tactic===name),m=metrics(a);
+  $('strategyDetail').style.display='block';
+  $('strategyDetail').innerHTML=`<div class="toolbar"><div><strong>Taktyka: ${esc(name)}</strong><div class="sub">Analiza konkretnego sposobu wykonania</div></div><button class="secondary" id="closeStrategyDetail">Zamknij</button></div>
+    <div class="strategy-detail-grid">
+      <div class="detail-box"><h4>Strategia nadrzędna</h4><p>${esc(d.strategy||'—')}</p><h4>Opis</h4><p>${esc(d.description||'Brak opisu.')}</p></div>
+      <div class="detail-box"><h4>Sygnał / trigger</h4><p>${esc(d.trigger||'Brak zapisanego triggera.')}</p><h4>Zasady</h4><p>${esc(d.rules||'Brak zapisanych zasad.')}</p></div>
+      <div class="detail-box"><h4>Wyniki</h4><p>${m.count} transakcji • ${num(m.winRate)}% WR • ${num(m.avg)}R średnio • ${money(m.pl)} • PF ${m.pf===Infinity?'∞':num(m.pf)}</p></div>
+      <div class="detail-box"><h4>Błędy do obserwowania</h4><p>${esc(d.mistakes||'Brak zapisanych błędów.')}</p></div>
+    </div>`;
+  $('closeStrategyDetail').onclick=()=>{$('strategyDetail').style.display='none'};
+}
+
+function saveStrategyDef(data){
+  const i=strategyDefs.findIndex(x=>x.name===data.name);
+  if(i>=0)strategyDefs[i]=data;else strategyDefs.push(data);
+  localStorage.setItem(STRATEGIES_KEY,JSON.stringify(strategyDefs));renderStrategies();refreshFilterOptions();
+}
+function saveTacticDef(data){
+  const i=tacticDefs.findIndex(x=>x.name===data.name);
+  if(i>=0)tacticDefs[i]=data;else tacticDefs.push(data);
+  localStorage.setItem(TACTICS_KEY,JSON.stringify(tacticDefs));renderStrategies();refreshFilterOptions();
+}
+function editStrategy(name){
+  const d=strategyDefs.find(x=>x.name===name)||{name,description:'',entry:'',exit:'',risk:'',mistakes:''};
+  const description=prompt('Opis strategii:',d.description||''); if(description===null)return;
+  const entry=prompt('Warunki wejścia:',d.entry||''); if(entry===null)return;
+  const exit=prompt('Zasady wyjścia / zarządzania:',d.exit||''); if(exit===null)return;
+  const risk=prompt('Zasady ryzyka:',d.risk||''); if(risk===null)return;
+  const mistakes=prompt('Najczęstsze błędy:',d.mistakes||''); if(mistakes===null)return;
+  saveStrategyDef({name,description,entry,exit,risk,mistakes});
+}
+function addStrategyDef(){
+  const name=prompt('Nazwa strategii (np. Breakout):');if(!name?.trim())return;
+  const description=prompt('Co oznacza ta strategia?','');if(description===null)return;
+  const entry=prompt('Jakie są warunki wejścia?','');if(entry===null)return;
+  const exit=prompt('Jak zarządzasz pozycją / wyjściem?','');if(exit===null)return;
+  const risk=prompt('Jakie są zasady ryzyka?','');if(risk===null)return;
+  const mistakes=prompt('Jakich błędów unikać?','');if(mistakes===null)return;
+  saveStrategyDef({name:name.trim(),description,entry,exit,risk,mistakes});
+}
+function addTacticDef(){
+  const name=prompt('Nazwa taktyki (np. DR + IDR):');if(!name?.trim())return;
+  const strategy=prompt('Do jakiej strategii należy?','');if(strategy===null)return;
+  const description=prompt('Opis taktyki:','');if(description===null)return;
+  const trigger=prompt('Jaki jest trigger / potwierdzenie wejścia?','');if(trigger===null)return;
+  const rules=prompt('Najważniejsze zasady wykonania:','');if(rules===null)return;
+  const mistakes=prompt('Jakich błędów unikać?','');if(mistakes===null)return;
+  saveTacticDef({name:name.trim(),strategy,description,trigger,rules,mistakes});
+}
+
+function refreshAll(){refreshFilterOptions();renderPanel();renderTransactions();renderCalendar();renderStats();renderStrategies();$('lastUpdate').textContent='Ostatnia aktualizacja: '+new Date().toLocaleString('pl-PL');}
+
+
+function updateTradeGuide(){
+  const hasBasics=$('tradeDate').value && $('tradeInstrument').value && $('tradeDirection').value;
+  const hasPlan=$('tradeStrategy').value;
+  const hasResult=$('tradeR').value!=='' && $('tradePL').value!=='';
+  const hasNote=$('tradeNote').value.trim();
+  ['step1','step2','step3','step4'].forEach(id=>$(id).classList.remove('active'));
+  if(!hasBasics){$('step1').classList.add('active');$('tradeGuideText').textContent='Krok 1: wpisz datę, instrument i kierunek transakcji.';return}
+  if(!hasPlan){$('step2').classList.add('active');$('tradeGuideText').textContent='Krok 2: określ strategię i taktykę. Strategia mówi DLACZEGO, taktyka JAK rozgrywasz setup.';return}
+  if(!hasResult){$('step3').classList.add('active');$('tradeGuideText').textContent='Krok 3: wpisz Entry, SL, TP oraz końcowy wynik w R i zł.';return}
+  if(!hasNote){$('step4').classList.add('active');$('tradeGuideText').textContent='Krok 4: dopisz krótki wniosek. Co zrobiłeś dobrze i co następnym razem poprawisz?';return}
+  $('step4').classList.add('active');$('tradeGuideText').textContent='Transakcja jest kompletna. Możesz ją zapisać.';
+}
+function bindTradeGuide(){
+  ['tradeDate','tradeTime','tradeInstrument','tradeDirection','tradeStrategy','tradeTactic','tradeEntry','tradeSL','tradeTP','tradeR','tradePL','tradeMFE','tradeMAE','tradeRetracement','tradeDuration','tradeNote']
+    .forEach(id=>{const el=$(id);if(el){el.addEventListener('input',updateTradeGuide);el.addEventListener('change',updateTradeGuide)}});
+}
+function openTrade(id=null){
+  $('tradeForm').reset();$('tradeId').value=id||'';
+  $('modalTitle').textContent=id?'Edytuj transakcję':'Dodaj transakcję';
+  const t=trades.find(x=>x.id===id);
+  if(t){Object.entries({tradeDate:'date',tradeTime:'time',tradeInstrument:'instrument',tradeDirection:'direction',tradeStrategy:'strategy',tradeTactic:'tactic',tradeEntry:'entry',tradeSL:'sl',tradeTP:'tp',tradeR:'r',tradePL:'pl',tradeMFE:'mfe',tradeMAE:'mae',tradeRetracement:'retracement',tradeDuration:'duration',tradeNote:'note'}).forEach(([a,b])=>$(a).value=t[b]??'');}
+  else $('tradeDate').value=new Date().toISOString().slice(0,10);
+  $('tradeModal').classList.add('open');
+}
+function deleteTrade(id){if(confirm('Usunąć tę transakcję?')){trades=trades.filter(t=>t.id!==id);save();}}
+$('tradeForm').onsubmit=e=>{
+  e.preventDefault();
+  const id=$('tradeId').value||uid();
+  const t={id,date:$('tradeDate').value,time:$('tradeTime').value,instrument:$('tradeInstrument').value.trim(),direction:$('tradeDirection').value,strategy:$('tradeStrategy').value.trim(),tactic:$('tradeTactic').value.trim(),entry:$('tradeEntry').value,sl:$('tradeSL').value,tp:$('tradeTP').value,r:+$('tradeR').value,pl:+$('tradePL').value,mfe:+$('tradeMFE').value||0,mae:+$('tradeMAE').value||0,retracement:+$('tradeRetracement').value||0,duration:+$('tradeDuration').value||0,note:$('tradeNote').value.trim()};
+  const i=trades.findIndex(x=>x.id===id);if(i>=0)trades[i]=t;else trades.push(t);
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(trades));$('tradeModal').classList.remove('open');refreshAll();
+};
+$('addTrade').onclick=()=>openTrade();
+$('closeModal').onclick=$('cancelTrade').onclick=()=>$('tradeModal').classList.remove('open');
+
+function switchSection(key){
+  const map={
+    panel:'viewPanel',
+    transactions:'viewTransactions',
+    calendar:'viewCalendar',
+    stats:'viewStats',
+    strategies:'viewStrategies',
+    notes:'viewNotes',
+    settings:'viewSettings'
+  };
+  const meta={
+    panel:['Panel analityczny','Analiza. Dyscyplina. Wyniki. • Taktyki DR / IDR'],
+    transactions:['Transakcje','Pełna historia i zarządzanie transakcjami'],
+    calendar:['Kalendarz','Wyniki transakcji według dni'],
+    stats:['Statystyki','Szczegółowa analiza aktualnie wyfiltrowanych danych'],
+    strategies:['Strategie i taktyki','Baza setupów, zasad, wariantów i wyników'],
+    notes:['Notatki','Notatki do sesji i obserwacji'],
+    settings:['Ustawienia','Konfiguracja i kopie zapasowe danych']
+  };
+
+  if(!map[key] || !meta[key]) return;
+
+  currentSection=key;
+  document.querySelectorAll('#mainNav button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.section===key);
+  });
+
+  Object.values(map).forEach(id=>{
+    const el=$(id);
+    if(el) el.style.display='none';
+  });
+
+  const active=$(map[key]);
+  if(active) active.style.display='block';
+
+  $('pageTitle').textContent=meta[key][0];
+  $('pageSub').textContent=meta[key][1];
+
+  // Re-render the currently selected tab so it always shows current data.
+  if(key==='panel') renderPanel();
+  if(key==='transactions') renderTransactions();
+  if(key==='calendar') renderCalendar();
+  if(key==='stats') renderStats();
+  if(key==='strategies') renderStrategies();
+}
+
+document.querySelectorAll('#mainNav button').forEach(b=>b.onclick=e=>{e.preventDefault();switchSection(b.dataset.section)});
+$('addStrategy').onclick=addStrategyDef;
+$('addTactic').onclick=addTacticDef;
+
+document.querySelectorAll('#weekdays button').forEach(b=>b.onclick=()=>b.classList.toggle('on'));
+document.querySelectorAll('#filterDirection button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#filterDirection button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
+document.querySelectorAll('#filterOutcome button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#filterOutcome button').forEach(x=>x.classList.remove('on'));b.classList.add('on')});
+$('applyFilters').onclick=()=>refreshAll();
+$('clearFilters').onclick=()=>{['filterInstrument','filterTactic','filterStrategy','filterFrom','filterTo'].forEach(id=>$(id).value='');document.querySelectorAll('#weekdays button').forEach(b=>b.classList.add('on'));document.querySelectorAll('.seg button').forEach((b,i)=>b.classList.toggle('on',i===0));refreshAll()};
+$('prevMonth').onclick=()=>{selectedMonth.setMonth(selectedMonth.getMonth()-1);renderCalendar()};
+$('nextMonth').onclick=()=>{selectedMonth.setMonth(selectedMonth.getMonth()+1);renderCalendar()};
+
+$('saveNote').onclick=()=>{localStorage.setItem(NOTES_KEY,$('notesArea').value);alert('Notatka zapisana.')};
+$('notesArea').value=localStorage.getItem(NOTES_KEY)||'';
+$('resetData').onclick=()=>{if(confirm('Usunąć wszystkie transakcje? Tej operacji nie można cofnąć.')){trades=[];save()}};
+$('exportData').onclick=()=>{const blob=new Blob([JSON.stringify(trades,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='moj-trading-backup.json';a.click();URL.revokeObjectURL(a.href)};
+$('importData').onclick=()=>$('importFile').click();
+$('importFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const data=JSON.parse(r.result);if(!Array.isArray(data))throw Error();trades=data;save();alert('Import zakończony.')}catch{alert('Nieprawidłowy plik JSON.')}};r.readAsText(f)};
+
+
+// ===== V4 mobile helpers =====
+const mobileFiltersToggle = $('mobileFiltersToggle');
+if(mobileFiltersToggle){
+  mobileFiltersToggle.onclick=()=>{
+    document.body.classList.toggle('mobile-filters-open');
+    mobileFiltersToggle.textContent=document.body.classList.contains('mobile-filters-open')?'✕ Zamknij filtry':'⚙ Filtry';
+  };
+}
+const mobileAddTrade = $('mobileAddTrade');
+if(mobileAddTrade) mobileAddTrade.onclick=()=>openTrade();
+
+// Close mobile filters after applying/clearing.
+const originalApplyFilters = $('applyFilters').onclick;
+$('applyFilters').onclick=()=>{ refreshAll(); document.body.classList.remove('mobile-filters-open'); if(mobileFiltersToggle) mobileFiltersToggle.textContent='⚙ Filtry'; };
+const originalClearFilters = $('clearFilters').onclick;
+$('clearFilters').onclick=()=>{ originalClearFilters(); document.body.classList.remove('mobile-filters-open'); if(mobileFiltersToggle) mobileFiltersToggle.textContent='⚙ Filtry'; };
+
+// PWA service worker registration (only works when served over HTTPS or localhost).
+if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+
+bindTradeGuide();
+refreshAll();
+</script>
+</body>
+</html>
