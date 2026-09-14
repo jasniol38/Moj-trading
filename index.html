@@ -281,7 +281,7 @@ main{padding:10px 9px 18px;overflow:auto;background:#343536}
       <div class="toolbar"><div><strong>Historia transakcji</strong><div class="sub">Tutaj prowadzimy każdą transakcję od początku do końca.</div></div>
         <div class="actions"><button class="primary" style="width:auto" id="addTrade">＋ Dodaj transakcję</button><button class="secondary" id="exportData">Eksport JSON</button><button class="secondary" id="importData">Import JSON</button><input type="file" id="importFile" accept=".json" style="display:none"></div>
       </div>
-      <div class="table-wrap"><table class="table"><thead><tr><th>Data</th><th>Godzina</th><th>Instrument</th><th>Kierunek</th><th>Strategia</th><th>Taktyka</th><th>R</th><th>Wynik zł</th><th>Akcje</th></tr></thead><tbody id="transactionsTable"></tbody></table></div>
+      <div class="table-wrap"><table class="table"><thead><tr><th>Data</th><th>Godzina</th><th>Instrument</th><th>Kierunek</th><th>Strategia</th><th>Taktyka</th><th>R</th><th>Wynik USD</th><th>Akcje</th></tr></thead><tbody id="transactionsTable"></tbody></table></div>
     </section>
   </div>
 
@@ -329,7 +329,7 @@ main{padding:10px 9px 18px;overflow:auto;background:#343536}
         <div><strong>Analiza strategii</strong><div class="sub">Automatycznie liczona z zapisanych transakcji.</div></div>
       </div>
       <div class="table-wrap"><table class="table">
-        <thead><tr><th>Strategia</th><th>Transakcje</th><th>Win Rate</th><th>Średnie R</th><th>Wynik zł</th><th>Profit Factor</th><th>Najlepsza taktyka</th><th>Akcje</th></tr></thead>
+        <thead><tr><th>Strategia</th><th>Transakcje</th><th>Win Rate</th><th>Średnie R</th><th>Wynik USD</th><th>Profit Factor</th><th>Najlepsza taktyka</th><th>Akcje</th></tr></thead>
         <tbody id="strategyTable"></tbody>
       </table></div>
     </section>
@@ -374,8 +374,8 @@ main{padding:10px 9px 18px;overflow:auto;background:#343536}
         <div class="field"><label>Entry</label><input type="number" step="any" id="tradeEntry"><span class="field-help">Cena wejścia.</span></div>
         <div class="field"><label>SL</label><input type="number" step="any" id="tradeSL"><span class="field-help">Poziom, przy którym plan zakłada wyjście ze stratą.</span></div>
         <div class="field"><label>TP</label><input type="number" step="any" id="tradeTP"><span class="field-help">Planowany poziom realizacji zysku.</span></div>
-        <div class="form-section">KROK 3 — WYNIK</div><div class="field required-guide"><label>Wynik R *</label><input type="number" step="0.01" id="tradeR" required><span class="field-help">+1R = zarobiłeś tyle, ile wynosiło ryzyko. -1R = pełna strata ryzyka.</span></div>
-        <div class="field required-guide"><label>Wynik zł *</label><input type="number" step="0.01" id="tradePL" required><span class="field-help">Rzeczywisty wynik finansowy po zamknięciu.</span></div>
+        <div class="form-section">KROK 3 — WYNIK</div><div class="field required-guide"><label>Zdobycie zakresu *</label><select id="tradeRange" required><option value="">Wybierz zakres</option><option value="Mniej">Mniej</option><option value="-0.5">-0,5</option><option value="-1">-1</option><option value="-1.5">-1,5</option><option value="-2">-2</option><option value="Więcej">Więcej</option></select><span class="field-help">Wybierz osiągnięty zakres transakcji.</span></div><input type="hidden" id="tradeR">
+        <div class="field required-guide"><label>Wynik USD *</label><input type="number" step="0.01" id="tradePL" required><span class="field-help">Rzeczywisty wynik finansowy po zamknięciu.</span></div>
         <div class="field"><label>MFE</label><input type="number" step="0.01" id="tradeMFE"><span class="field-help">Jak daleko transakcja poszła maksymalnie w dobrą stronę.</span></div>
         <div class="field"><label>MAE</label><input type="number" step="0.01" id="tradeMAE"><span class="field-help">Jak daleko poszła maksymalnie przeciwko Tobie.</span></div>
         <div class="field"><label>Retracement</label><input type="number" step="0.01" id="tradeRetracement"><span class="field-help">Wielkość cofnięcia po ruchu.</span></div>
@@ -400,7 +400,7 @@ let selectedMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1);
 let selectedCalendarDate=null;
 
 const $=id=>document.getElementById(id);
-const money=n=>new Intl.NumberFormat('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n||0)+' zł';
+const money=n=>new Intl.NumberFormat('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n||0)+' USD';
 const num=n=>new Intl.NumberFormat('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n||0);
 const datePL=s=>s?new Date(s+'T00:00:00').toLocaleDateString('pl-PL'):'—';
 function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(trades)); refreshAll();}
@@ -717,24 +717,24 @@ function refreshAll(){refreshFilterOptions();renderPanel();renderTransactions();
 function updateTradeGuide(){
   const hasBasics=$('tradeDate').value && $('tradeInstrument').value && $('tradeDirection').value;
   const hasPlan=$('tradeStrategy').value;
-  const hasResult=$('tradeR').value!=='' && $('tradePL').value!=='';
+  const hasResult=$('tradeRange').value!=='' && $('tradePL').value!=='';
   const hasNote=$('tradeNote').value.trim();
   ['step1','step2','step3','step4'].forEach(id=>$(id).classList.remove('active'));
   if(!hasBasics){$('step1').classList.add('active');$('tradeGuideText').textContent='Krok 1: wpisz datę, instrument i kierunek transakcji.';return}
   if(!hasPlan){$('step2').classList.add('active');$('tradeGuideText').textContent='Krok 2: określ strategię i taktykę. Strategia mówi DLACZEGO, taktyka JAK rozgrywasz setup.';return}
-  if(!hasResult){$('step3').classList.add('active');$('tradeGuideText').textContent='Krok 3: wpisz Entry, SL, TP oraz końcowy wynik w R i zł.';return}
+  if(!hasResult){$('step3').classList.add('active');$('tradeGuideText').textContent='Krok 3: wpisz Entry, SL, TP, wybierz zdobycie zakresu i wpisz wynik finansowy w USD.';return}
   if(!hasNote){$('step4').classList.add('active');$('tradeGuideText').textContent='Krok 4: dopisz krótki wniosek. Co zrobiłeś dobrze i co następnym razem poprawisz?';return}
   $('step4').classList.add('active');$('tradeGuideText').textContent='Transakcja jest kompletna. Możesz ją zapisać.';
 }
 function bindTradeGuide(){
-  ['tradeDate','tradeTime','tradeInstrument','tradeDirection','tradeStrategy','tradeTactic','tradeEntry','tradeSL','tradeTP','tradeR','tradePL','tradeMFE','tradeMAE','tradeRetracement','tradeDuration','tradeNote']
+  ['tradeDate','tradeTime','tradeInstrument','tradeDirection','tradeStrategy','tradeTactic','tradeEntry','tradeSL','tradeTP','tradeRange','tradePL','tradeMFE','tradeMAE','tradeRetracement','tradeDuration','tradeNote']
     .forEach(id=>{const el=$(id);if(el){el.addEventListener('input',updateTradeGuide);el.addEventListener('change',updateTradeGuide)}});
 }
 function openTrade(id=null){
   $('tradeForm').reset();$('tradeId').value=id||'';
   $('modalTitle').textContent=id?'Edytuj transakcję':'Dodaj transakcję';
   const t=trades.find(x=>x.id===id);
-  if(t){Object.entries({tradeDate:'date',tradeTime:'time',tradeInstrument:'instrument',tradeDirection:'direction',tradeStrategy:'strategy',tradeTactic:'tactic',tradeEntry:'entry',tradeSL:'sl',tradeTP:'tp',tradeR:'r',tradePL:'pl',tradeMFE:'mfe',tradeMAE:'mae',tradeRetracement:'retracement',tradeDuration:'duration',tradeNote:'note'}).forEach(([a,b])=>$(a).value=t[b]??'');}
+  if(t){Object.entries({tradeDate:'date',tradeTime:'time',tradeInstrument:'instrument',tradeDirection:'direction',tradeStrategy:'strategy',tradeTactic:'tactic',tradeEntry:'entry',tradeSL:'sl',tradeTP:'tp',tradeRange:'range',tradePL:'pl',tradeMFE:'mfe',tradeMAE:'mae',tradeRetracement:'retracement',tradeDuration:'duration',tradeNote:'note'}).forEach(([a,b])=>$(a).value=t[b]??'');}
   else $('tradeDate').value=new Date().toISOString().slice(0,10);
   $('tradeModal').classList.add('open');
 }
@@ -742,7 +742,7 @@ function deleteTrade(id){if(confirm('Usunąć tę transakcję?')){trades=trades.
 $('tradeForm').onsubmit=e=>{
   e.preventDefault();
   const id=$('tradeId').value||uid();
-  const t={id,date:$('tradeDate').value,time:$('tradeTime').value,instrument:$('tradeInstrument').value.trim(),direction:$('tradeDirection').value,strategy:$('tradeStrategy').value.trim(),tactic:$('tradeTactic').value.trim(),entry:$('tradeEntry').value,sl:$('tradeSL').value,tp:$('tradeTP').value,r:+$('tradeR').value,pl:+$('tradePL').value,mfe:+$('tradeMFE').value||0,mae:+$('tradeMAE').value||0,retracement:+$('tradeRetracement').value||0,duration:+$('tradeDuration').value||0,note:$('tradeNote').value.trim()};
+  const t={id,date:$('tradeDate').value,time:$('tradeTime').value,instrument:$('tradeInstrument').value.trim(),direction:$('tradeDirection').value,strategy:$('tradeStrategy').value.trim(),tactic:$('tradeTactic').value.trim(),entry:$('tradeEntry').value,sl:$('tradeSL').value,tp:$('tradeTP').value,range:$('tradeRange').value,r:(()=>{const v=$('tradeRange').value; return ['-0.5','-1','-1.5','-2'].includes(v)?Number(v):null})(),pl:+$('tradePL').value,mfe:+$('tradeMFE').value||0,mae:+$('tradeMAE').value||0,retracement:+$('tradeRetracement').value||0,duration:+$('tradeDuration').value||0,note:$('tradeNote').value.trim()};
   const i=trades.findIndex(x=>x.id===id);if(i>=0)trades[i]=t;else trades.push(t);
   localStorage.setItem(STORAGE_KEY,JSON.stringify(trades));$('tradeModal').classList.remove('open');refreshAll();
 };
