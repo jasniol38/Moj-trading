@@ -208,11 +208,20 @@ main{padding:10px 9px 18px;overflow:auto;background:#343536}
 <aside>
   <div class="filter-title">⚙ Filtry</div>
   <div class="field"><label>Instrument</label>
-  <input type="text" id="filterInstrument" list="instrumentOptions"
-         placeholder="Wpisz instrument lub wybierz..." autocomplete="off" spellcheck="false">
-  <datalist id="instrumentOptions"></datalist>
+  <select id="filterInstrument">
+    <option value="">Wszystkie</option>
+    <option value="BTC">BTC</option>
+    <option value="Ropa">Ropa</option>
+    <option value="Nasdaq">Nasdaq</option>
+  </select>
 </div>
-  <div class="field"><label>Taktyka</label><input id="filterTactic" list="filterTacticOptions" placeholder="Wszystkie / wpisz..." autocomplete="off"><datalist id="filterTacticOptions"></datalist></div>
+  <div class="field"><label>Taktyka</label>
+  <select id="filterTactic">
+    <option value="">Wszystkie</option>
+    <option value="DR">DR</option>
+    <option value="IDR">IDR</option>
+  </select>
+</div>
   <div class="field"><label>Strategia</label><input id="filterStrategy" list="filterStrategyOptions" placeholder="Wszystkie / wpisz..." autocomplete="off"><datalist id="filterStrategyOptions"></datalist></div>
   <div class="field"><label>Od daty</label><input type="date" id="filterFrom"></div>
   <div class="field"><label>Do daty</label><input type="date" id="filterTo"></div>
@@ -331,7 +340,7 @@ main{padding:10px 9px 18px;overflow:auto;background:#343536}
       <input type="hidden" id="tradeId">
       <div class="trade-guide">
         <div class="trade-guide-title">Prowadzę Cię krok po kroku</div>
-        <div class="trade-guide-text" id="tradeGuideText">Najpierw wpisz podstawowe informacje. Potem określimy strategię i taktykę, parametry wejścia oraz wynik.</div>
+        <div class="trade-guide-text" id="tradeGuideText">Najpierw wybierz instrument i kierunek. Potem wybierz strategię i taktykę DR/IDR, parametry wejścia oraz wynik.</div>
         <div class="trade-progress">
           <div class="trade-step active" id="step1">1. Podstawy</div>
           <div class="trade-step" id="step2">2. Plan</div>
@@ -342,10 +351,10 @@ main{padding:10px 9px 18px;overflow:auto;background:#343536}
       <div class="formgrid">
         <div class="form-section">KROK 1 — PODSTAWOWE INFORMACJE</div><div class="field required-guide"><label>Data *</label><input type="date" id="tradeDate" required><span class="field-help">Dzień, w którym otworzyłeś pozycję.</span></div>
         <div class="field"><label>Godzina wejścia</label><input type="time" id="tradeTime"><span class="field-help">Godzina faktycznego wejścia.</span></div>
-        <div class="field required-guide"><label>Instrument *</label><input type="text" id="tradeInstrument" placeholder="np. NQ" autocomplete="off" spellcheck="false" required><span class="field-help">Rynek/instrument, np. NQ, ES, EURUSD.</span></div>
+        <div class="field required-guide"><label>Instrument *</label><select id="tradeInstrument" required><option value="">Wybierz instrument...</option><option value="BTC">BTC</option><option value="Ropa">Ropa</option><option value="Nasdaq">Nasdaq</option></select><span class="field-help">Wybierz rynek: BTC, Ropa albo Nasdaq.</span></div>
         <div class="field required-guide"><label>Kierunek *</label><select id="tradeDirection"><option>Long</option><option>Short</option></select><span class="field-help">Long = grasz wzrost. Short = grasz spadek.</span></div>
         <div class="form-section">KROK 2 — PLAN TRANSAKCJI</div><div class="field required-guide"><label>Strategia *</label><input id="tradeStrategy" list="strategyOptions" placeholder="np. Breakout" autocomplete="off" required><datalist id="strategyOptions"></datalist><span class="field-help">Dlaczego bierzesz transakcję? Nazwa głównego setupu.</span></div>
-        <div class="field"><label>Taktyka</label><input id="tradeTactic" list="tacticOptions" type="text" autocomplete="off" placeholder="np. DR + IDR"><datalist id="tacticOptions"></datalist><span class="field-help">Jak dokładnie rozegrałeś strategię?</span></div>
+        <div class="field"><label>Taktyka</label><select id="tradeTactic"><option value="">Wybierz taktykę...</option><option value="DR">DR</option><option value="IDR">IDR</option></select><span class="field-help">Wybierz sposób rozegrania setupu: DR albo IDR.</span></div>
         <div class="field"><label>Entry</label><input type="number" step="any" id="tradeEntry"><span class="field-help">Cena wejścia.</span></div>
         <div class="field"><label>SL</label><input type="number" step="any" id="tradeSL"><span class="field-help">Poziom, przy którym plan zakłada wyjście ze stratą.</span></div>
         <div class="field"><label>TP</label><input type="number" step="any" id="tradeTP"><span class="field-help">Planowany poziom realizacji zysku.</span></div>
@@ -392,7 +401,18 @@ function options(id,values){
   el.innerHTML='<option value="">Wszystkie</option>'+vals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
   if(vals.includes(cur))el.value=cur;
 }
-function refreshFilterOptions(){options('filterInstrument',trades.map(t=>t.instrument));options('filterTactic',trades.map(t=>t.tactic));options('filterStrategy',trades.map(t=>t.strategy));options('tradeStrategy',trades.map(t=>t.strategy));options('tradeTactic',trades.map(t=>t.tactic));}
+const DEFAULT_INSTRUMENTS=['BTC','Ropa','Nasdaq'];
+const DEFAULT_TACTICS=['DR','IDR'];
+function refreshFilterOptions(){
+  const instrument=$('filterInstrument'), tactic=$('filterTactic');
+  const keepInstrument=instrument.value, keepTactic=tactic.value;
+  instrument.innerHTML='<option value="">Wszystkie</option>'+DEFAULT_INSTRUMENTS.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  tactic.innerHTML='<option value="">Wszystkie</option>'+DEFAULT_TACTICS.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  if(keepInstrument) instrument.value=keepInstrument;
+  if(keepTactic) tactic.value=keepTactic;
+  options('filterStrategy',trades.map(t=>t.strategy));
+  options('tradeStrategy',trades.map(t=>t.strategy));
+}
 
 function filters(){
   const days=[...document.querySelectorAll('#weekdays button.on')].map(b=>+b.dataset.day);
