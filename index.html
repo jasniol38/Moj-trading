@@ -6,10 +6,10 @@
 <meta name="theme-color" content="#202122">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Mój Trading">
+<meta name="apple-mobile-web-app-title" content="CIASNY Trading">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>Mój Trading — Dziennik tradingowy</title>
+<title>CIASNY — Dziennik tradingowy</title>
 <style>
 :root{
   --bg:#343536; --bg2:#303132; --panel:#383a3b; --panel2:#3d3f40;
@@ -84,6 +84,21 @@ main{padding:10px 9px 18px;overflow:auto;background:#343536}
 .chart svg{width:100%;height:142px;display:block}
 .visual-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:9px}
 .visual-chart{min-height:190px}
+.range-panel{margin-top:9px;padding:10px;background:#383a3b;border:1px solid #292a2b;border-radius:4px;box-shadow:0 3px 8px #0007}
+.range-panel h3{font-size:10px;font-weight:700;color:#ddd;margin:0 0 8px}
+.range-note{color:#999;font-size:9px;margin-bottom:8px}
+.range-table{width:100%;border-collapse:collapse;font-size:9px}
+.range-table th,.range-table td{padding:6px 5px;border-bottom:1px solid #4a4b4c;text-align:right;white-space:nowrap}
+.range-table th:first-child,.range-table td:first-child{text-align:left}
+.range-table th{color:#aaa;font-weight:600}
+.range-table .range-zero{color:#e16a6a;font-weight:700}
+.range-table .range-pos{color:#43a5e8}
+.range-table .range-neg{color:#53c26b}
+.range-section-title{margin:9px 0 4px;padding:5px 6px;background:#2d2f30;color:#aaa;font-size:8px;font-weight:700;letter-spacing:.5px;border-left:3px solid #53c26b}
+.range-section-title.return-title{border-left-color:#43a5e8;color:#43a5e8}
+.range-return-label{font-size:7px;font-weight:700;letter-spacing:.3px;opacity:.9}
+@media(max-width:750px){.range-table{font-size:8px}.range-table th,.range-table td{padding:5px 3px}}
+
 .heatmap{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;height:142px;padding:2px}
 .heatmap span{display:flex;align-items:center;justify-content:center;background:#444647;color:#eee;font-size:9px}
 .heatmap span:nth-child(3n){background:#4a7fa0}.heatmap span:nth-child(4n){background:#5a9ccc}.heatmap span:nth-child(5n){background:#376b8a}
@@ -256,6 +271,7 @@ main{padding:10px 9px 18px;overflow:auto;background:#343536}
   <div id="viewPanel">
     <section class="cards" id="cards"></section>
     <section class="visual-grid" id="visuals"></section>
+    <section id="rangeLevels"></section>
     <section class="grid" id="charts"></section>
     <section class="summary" id="summary"></section>
   </div>
@@ -463,17 +479,18 @@ function renderPanel(){
     `<div class="sum"><label>Średnie MAE</label><strong>${num(avgField(filters(),'mae'))}</strong></div>`
   ].join('');
   const arr=filters();
-  $('visuals').innerHTML=areaChart('M7 Price — Extension / Retracement',arr.map(t=>+t.r||0))+
-    heatmapChart('M7 Heatmap',arr);
+  $('visuals').innerHTML=areaChart('CIASNY Price — Extension / Retracement',arr.map(t=>+t.r||0))+
+    heatmapChart('CIASNY Heatmap',arr);
+  $('rangeLevels').innerHTML=rangeLevelsChart(arr);
   $('charts').innerHTML=
-    chartBar('M7 Retracement',arr.slice(-20).map(t=>+t.retracement||0),'ret')+
+    chartBar('CIASNY Retracement',arr.slice(-20).map(t=>+t.retracement||0),'ret')+
     chartBar('Max Retracement',arr.slice(-20).map(t=>+t.retracement||0),'ret2')+
-    chartBar('M7 Max Extension',arr.slice(-20).map(t=>+t.mfe||0),'mfe')+
+    chartBar('CIASNY Max Extension',arr.slice(-20).map(t=>+t.mfe||0),'mfe')+
     chartBar('Max Retracement Before Conf.',arr.slice(-20).map(t=>+t.mae||0),'mae2')+
-    chartBar('M7 Retracement Time — 15 mins',arr.slice(-20).map(t=>+t.duration||0),'duration')+
+    chartBar('CIASNY Retracement Time — 15 mins',arr.slice(-20).map(t=>+t.duration||0),'duration')+
     chartBar('Max Retracement Time',arr.slice(-20).map(t=>+t.duration||0),'duration2')+
     chartBar('Max Extension Time',arr.slice(-20).map(t=>+t.mfe||0),'mfe2')+
-    chartBar('M7 Box SD',arr.slice(-20).map(t=>+t.r||0),'box');
+    chartBar('CIASNY Box SD',arr.slice(-20).map(t=>+t.r||0),'box');
 }
 function avgField(arr,k){const x=arr.map(t=>+t[k]).filter(Number.isFinite);return x.length?x.reduce((a,b)=>a+b,0)/x.length:0}
 
@@ -499,6 +516,30 @@ function heatmapChart(title,arr){
   return `<div class="chart visual-chart"><h3>${title}</h3><div class="heatmap">${
     vals.map((v,i)=>`<span title="${esc(num(v))}R">${Math.round(v*10)/10}</span>`).join('')
   }</div></div>`;
+}
+function rangeLevelsChart(arr){
+  const t=arr.length?arr[arr.length-1]:null;
+  const entry=t&&Number.isFinite(+t.entry)?+t.entry:null;
+  const sl=t&&Number.isFinite(+t.sl)?+t.sl:null;
+  const risk=entry!==null&&sl!==null?Math.abs(entry-sl):null;
+  const lowerLevels=[-3,-2.5,-2,-1.5,-1,-0.5];
+  const returnLevels=[0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1];
+  const fmtLevel=v=>String(v).replace('.',',');
+  const fmtPrice=v=>Number(v).toFixed(2).replace('.',',');
+  const makeRows=levels=>levels.map(l=>{
+    const price=risk!==null?entry-(l*risk):null;
+    const cls=l===0?'range-zero':l>0?'range-pos':'range-neg';
+    return `<tr class="${cls}"><td>${fmtLevel(l)}${l===0?' <span class="range-return-label">POWRÓT</span>':''}</td><td>${price===null?'—':fmtPrice(price)}</td></tr>`;
+  }).join('');
+  const note=risk!==null
+    ? `Ostatnia filtrowana transakcja: Entry ${fmtPrice(entry)} • 1R = ${fmtPrice(risk)}.`
+    : 'Aby wyliczyć ceny zakresów, zapisz Entry i SL w transakcji.';
+  return `<div class="range-panel"><h3>CIASNY — Zakresy cenowe</h3><div class="range-note">${note}</div><div style="overflow:auto">
+    <div class="range-section-title">ZAKRESY</div>
+    <table class="range-table"><thead><tr><th>Zakres R</th><th>Cena</th></tr></thead><tbody>${makeRows(lowerLevels)}</tbody></table>
+    <div class="range-section-title return-title">POWRÓT DO CENY — 0R → 1R</div>
+    <table class="range-table"><thead><tr><th>Zakres R</th><th>Cena</th></tr></thead><tbody>${makeRows(returnLevels)}</tbody></table>
+  </div></div>`;
 }
 function chartBar(title,vals,type){
   if(!vals.length)return `<div class="chart"><h3>${title}</h3><div class="empty">Brak danych dla wybranych filtrów.</div></div>`;
